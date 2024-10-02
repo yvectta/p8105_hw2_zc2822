@@ -71,3 +71,10 @@ Combine the datasets:
 combined_trash_df = bind_rows(mr_trash_df, prof_trash_df, gwynnda_trash_df)
 ```
 
+A paragraph about these data:
+
+The number of observations in the resulting dataset is `r nrow(combined_trash_df)`. The variables in the datasets are `r colnames(combined_trash_df)`. The total weight of trash collected by Professor Trash Wheel was `r sum(prof_trash_df$weight_tons, na.rm = TRUE)`. The total number of cigarette butts collected by Gwynnda in June of 2022 was `r gwynnda_trash_df |> filter(year == 2022, month == "June") |> pull(cigarette_butts) |> sum(na.rm = TRUE) |> as.integer()`.
+
+
+
+
