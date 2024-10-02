@@ -9,6 +9,86 @@ library(tidyverse)
 library(readxl)
 ```
 
+## Problem 1
+
+Read and clean the data:
+
+```{r}
+subway_df = 
+  read_csv("data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv", na = c("NA", ".", "")) |> 
+  janitor::clean_names() |> 
+  select(line:entry, vending, ada) |> 
+  mutate(entry = ifelse(entry == "YES", TRUE, FALSE))
+```
+
+The datasets contain variables `r colnames(subway_df)`, the dimension is `r nrow(subway_df)` * `r ncol(subway_df)`.
+
+How many distinct stations are there? 
+
+```{r}
+subway_df |> 
+  select(line, station_name) |> 
+  distinct() |> 
+  nrow()
+```
+
+How many stations are ADA compliant?
+
+```{r}
+subway_df |> 
+  filter(ada == TRUE) |> 
+  select(line, station_name) |> 
+  distinct() |> 
+  nrow()
+```
+
+What proportion of station entrances / exits without vending allow entrance?
+
+```{r}
+novending_entry = 
+  subway_df |> 
+  filter(vending == "NO", entry == TRUE) |> 
+  nrow()
+
+total_novending = 
+  subway_df |> 
+  filter(vending == "NO") |> 
+  nrow()  
+
+prop = novending_entry / total_novending
+prop
+```
+
+Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+
+```{r}
+subway_df_reformat =
+  subway_df |> 
+  mutate(across(route1:route11, as.character)) |> 
+  pivot_longer(
+    cols = route1:route11,
+    names_to = "route_num",
+    values_to = "route_name"
+  ) 
+
+A_train = 
+  subway_df_reformat |> 
+    filter(route_name == "A") |> 
+    select(line, station_name) |> 
+    distinct() |> 
+    nrow()
+
+A_train_ada = 
+  subway_df_reformat |> 
+    filter(route_name == "A", ada == TRUE) |> 
+    select(line, station_name) |> 
+    distinct() |> 
+    nrow()
+```
+
+`r A_train` distinct stations serve the A train. Of the stations that serve the A train, `r A_train_ada` are ADA compliant.
+
+
 ## Problem 2
 
 Read and clean the Mr. Trash Wheel sheet:
@@ -203,3 +283,4 @@ viewers_season5 =
 ```
 
 The average viewership in Season 1 is `r viewers_season1`, and in Season 5 is `r viewers_season5`.
+
