@@ -166,7 +166,7 @@ Import and clean Bakers dataset:
 bakers_df = 
   read_csv("data/gbb_datasets/bakers.csv", na = c("NA", ".", "")) |> 
   janitor::clean_names() |> 
-  separate(baker_name, into = c("baker", "last_name")) |> 
+  separate(baker_name, into = c("baker", "last_name"), sep = " ") |> 
   arrange(series) |> 
   relocate(series)
 ```
@@ -176,11 +176,7 @@ Import and clean Bakes dataset:
 bakes_df = 
   read_csv("data/gbb_datasets/bakes.csv", na = c("NA", ".", "")) |> 
   janitor::clean_names() |> 
-  mutate(
-    baker = ifelse(baker == '"Jo"', "Joanne", baker),
-    baker = ifelse(baker == "Mary-Anne", "Mary", baker),
-    baker = ifelse(baker == "Sarah-Jane", "Sarah", baker),
-  )
+  mutate(baker = ifelse(baker == '"Jo"', "Jo", baker))
 ```
 
 Import and clean Results dataset:
@@ -188,12 +184,7 @@ Import and clean Results dataset:
 ```{r}
 results_df = 
   read_csv("data/gbb_datasets/results.csv", na = c("NA", ".", ""), skip = 2) |> 
-  janitor::clean_names() |> 
-  mutate(
-    baker = ifelse(baker == "Mary-Anne", "Mary", baker),
-    baker = ifelse(baker == "Sarah-Jane", "Sarah", baker),
-    baker = ifelse(baker == "Kim-Joy", "Kim", baker)
-  )
+  janitor::clean_names() 
 ```
 
 Using `anti-join`:
@@ -219,7 +210,7 @@ write_csv(combined_gbb_df, "data/gbb_datasets/combined_gbb.csv")
 
 **Describe the data cleaning process**
 
-I first imported the three datasets. There are header rows in the Results dataset, so I applyed `skip` when using `read_csv`. Then I looked through the variables in each dataset, where I found the bakers' names are recorded differently. So, I separated the full name in the Bakers dataset into the first name and the last name. Then I checked for completeness and correctness across datasets, by viewing and using `anti_join`, I corrected some names in the Bakes and Results. For example, I used `ifelse` in `mutate` to replace "Jo" with Joanne. After this, I arranged and relocated series in the Bakers dataset for easier read. To merge the three datasets into a final one, I used `left_join` to first join the `results_df` to the `bakes_df` by their common variables, then I joined `bakers_df` to these two. The final dataset `combined_gbb_df` has `r ncol(combined_gbb_df)` variables, which are: `r colnames(combined_gbb_df)`. It has `r nrow(combined_gbb_df)` rows.
+I first imported the three datasets. There are header rows in the Results dataset, so I applyed `skip` when using `read_csv`. Then I looked through the variables in each dataset, where I found the bakers' names are recorded differently. So, I separated the full name in the Bakers dataset into the first name and the last name. Then I checked for completeness and correctness across datasets, by viewing and using `anti_join`, I corrected some names in the Bakes and Results. For example, I used `ifelse` in `mutate` to replace "Jo" with Jo. After this, I arranged and relocated series in the Bakers dataset for easier read. To merge the three datasets into a final one, I used `left_join` to first join the `results_df` to the `bakes_df` by their common variables, then I joined `bakers_df` to these two. The final dataset `combined_gbb_df` has `r ncol(combined_gbb_df)` variables, which are: `r colnames(combined_gbb_df)`. It has `r nrow(combined_gbb_df)` rows.
 
 
 
