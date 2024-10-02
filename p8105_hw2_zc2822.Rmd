@@ -15,7 +15,8 @@ library(haven)
 Read and clean the Mr. Trash Wheel sheet:
 
 ```{r}
-mr_trash_df = read_excel("data/202409\ Trash\ Wheel\ Collection\ Data.xlsx", 
+mr_trash_df = 
+  read_excel("data/202409\ Trash\ Wheel\ Collection\ Data.xlsx", 
                       sheet = "Mr. Trash Wheel",
                       na = c("NA", ".", ""),
                       range = "A2:N655"
@@ -34,7 +35,8 @@ mr_trash_df = read_excel("data/202409\ Trash\ Wheel\ Collection\ Data.xlsx",
 Read and clean the Professor Trash Wheel sheet:
 
 ```{r}
-prof_trash_df = read_excel("data/202409\ Trash\ Wheel\ Collection\ Data.xlsx", 
+prof_trash_df = 
+  read_excel("data/202409\ Trash\ Wheel\ Collection\ Data.xlsx", 
                       sheet = "Professor Trash Wheel",
                       na = c("NA", ".", ""),
                       range = "A2:M123"
@@ -51,7 +53,8 @@ prof_trash_df = read_excel("data/202409\ Trash\ Wheel\ Collection\ Data.xlsx",
 Read and clean the Gwynnda Trash Wheel sheet:
 
 ```{r}
-gwynnda_trash_df = read_excel("data/202409\ Trash\ Wheel\ Collection\ Data.xlsx", 
+gwynnda_trash_df = 
+  read_excel("data/202409\ Trash\ Wheel\ Collection\ Data.xlsx", 
                       sheet = "Gwynnda Trash Wheel",
                       na = c("NA", ".", ""),
                       range = "A2:L266"
@@ -76,5 +79,90 @@ A paragraph about these data:
 The number of observations in the resulting dataset is `r nrow(combined_trash_df)`. The variables in the datasets are `r colnames(combined_trash_df)`. The total weight of trash collected by Professor Trash Wheel was `r sum(prof_trash_df$weight_tons, na.rm = TRUE)`. The total number of cigarette butts collected by Gwynnda in June of 2022 was `r gwynnda_trash_df |> filter(year == 2022, month == "June") |> pull(cigarette_butts) |> sum(na.rm = TRUE) |> as.integer()`.
 
 
+## Problem 3
+
+Import and clean Bakers dataset:
+
+```{r}
+bakers_df = 
+  read_csv("data/gbb_datasets/bakers.csv", na = c("NA", ".", "")) |> 
+  janitor::clean_names() |> 
+  separate(baker_name, into = c("baker", "last_name")) |> 
+  arrange(series) |> 
+  relocate(series)
+```
+
+Import and clean Bakes dataset:
+```{r}
+bakes_df = 
+  read_csv("data/gbb_datasets/bakes.csv", na = c("NA", ".", "")) |> 
+  janitor::clean_names() |> 
+  mutate(
+    baker = ifelse(baker == '"Jo"', "Joanne", baker),
+    baker = ifelse(baker == "Mary-Anne", "Mary", baker),
+    baker = ifelse(baker == "Sarah-Jane", "Sarah", baker),
+  )
+```
+
+Import and clean Results dataset:
+
+```{r}
+results_df = 
+  read_csv("data/gbb_datasets/results.csv", na = c("NA", ".", ""), skip = 2) |> 
+  janitor::clean_names() |> 
+  mutate(
+    baker = ifelse(baker == "Mary-Anne", "Mary", baker),
+    baker = ifelse(baker == "Sarah-Jane", "Sarah", baker),
+    baker = ifelse(baker == "Kim-Joy", "Kim", baker)
+  )
+```
+
+Using `anti-join`:
+
+```{r}
+anti_join(bakers_df, bakes_df)
+anti_join(bakers_df, results_df)
+```
+
+Combine the datasets:
+
+```{r}
+combined_gbb_df = 
+  left_join(bakes_df, results_df, by = c("series", "episode", "baker")) |> 
+  left_join(bakers_df, by = c("series", "baker")) 
+```
+
+Export the result as a CSV:
+
+```{r}
+write_csv(combined_gbb_df, "data/gbb_datasets/combined_gbb.csv")
+```
+
+**Describe the data cleaning process**
+
+I first imported the three datasets. There are header rows in the Results dataset, so I applyed `skip` when using `read_csv`. Then I looked through the variables in each dataset, where I found the bakers' names are recorded differently. So, I separated the full name in the Bakers dataset into the first name and the last name. Then I checked for completeness and correctness across datasets, by viewing and using `anti_join`, I corrected some names in the Bakes and Results. For example, I used `ifelse` in `mutate` to replace "Jo" with Joanne. After this, I arranged and relocated series in the Bakers dataset for easier read. To merge the three datasets into a final one, I used `left_join` to first join the `results_df` to the `bakes_df` by their common variables, then I joined `bakers_df` to these two. The final dataset `combined_gbb_df` has `r ncol(combined_gbb_df)` variables, which are: `r colnames(combined_gbb_df)`. It has `r nrow(combined_gbb_df)` rows.
+
+
+
+
+
+**Create a reader-friendly table showing the star baker or winner of each episode in Seasons 5 through 10:**
+
+```{r}
+winner_df =
+  results_df |> 
+  select(series, episode, baker, result) |> 
+  filter(series >= 5, series <= 10, 
+         result %in% c("STAR BAKER", "WINNER")) |> 
+  pivot_wider(
+    names_from = series, 
+    values_from = baker
+    ) |> 
+  relocate(result) 
+
+winner_df
+```
+
+There are some predictable overall winners, for example, Nadiya and Rahul appeared mutiple times being the star baker in different episodes. There are also surprises, for example, David did not appear to be the star baker in any episode in series 10, but he was the winner of that series.
 
 
