@@ -7,7 +7,6 @@ output: github_document
 ```{r setup, echo=FALSE, message=FALSE}
 library(tidyverse)
 library(readxl)
-library(haven)
 ```
 
 ## Problem 2
@@ -166,3 +165,41 @@ winner_df
 There are some predictable overall winners, for example, Nadiya and Rahul appeared mutiple times being the star baker in different episodes. There are also surprises, for example, David did not appear to be the star baker in any episode in series 10, but he was the winner of that series.
 
 
+**Import, clean, tidy, and organize the viewership data in viewers.csv**
+
+```{r}
+viewers_df = 
+  read_csv("data/gbb_datasets/viewers.csv", na = c("NA", ".", "")) |> 
+  janitor::clean_names() |> 
+  pivot_longer(
+    cols = series_1:series_10,
+    names_to = "series",
+    values_to = "viewers"
+  ) |> 
+  mutate(
+    series = sub("series_", "", series),
+    series = as.integer(series)
+  ) |> 
+  arrange(series) |> 
+  relocate(series)
+
+viewers_df |> head(10)
+```
+
+What was the average viewership in Season 1? In Season 5?
+
+```{r}
+viewers_season1 = 
+  viewers_df |> 
+  filter(series == 1) |> 
+  summarise(avg_season1 = mean(viewers, na.rm = TRUE))
+```
+
+```{r}
+viewers_season5 = 
+  viewers_df |> 
+  filter(series == 5) |> 
+  summarise(avg_season5 = mean(viewers, na.rm = TRUE))
+```
+
+The average viewership in Season 1 is `r viewers_season1`, and in Season 5 is `r viewers_season5`.
